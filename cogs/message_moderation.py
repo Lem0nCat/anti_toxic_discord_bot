@@ -4,7 +4,9 @@ import re
 import numpy as np
 import torch
 from disnake.ext import commands
-from transformers import DistilBertModel, DistilBertTokenizer, AutoModel, BertTokenizerFast
+from textblob import TextBlob
+from transformers import (AutoModel, BertTokenizerFast, DistilBertModel,
+                          DistilBertTokenizer)
 
 from config import *
 from nn.model import BERT_Arch
@@ -62,15 +64,6 @@ def get_prediction(str):
     return predicted_class
 
 
-def get_response(message):
-    intent = get_prediction(message)
-    for i in data['intents']:
-        if i["tag"] == intent:
-            result = random.choice(i["responses"])
-            break
-    return "Intent: " + intent + '\n' + "Response: " + result
-
-
 model = BERT_Arch(bert).to(device)
 model.load_state_dict(data_model['model_state'])
 model.eval()
@@ -85,12 +78,19 @@ class Speaking(commands.Cog):
         if message.author.bot or message.content.startswith(PREFIX):
             return
 
+        # Исправление ошибок в сообщении
+        # Making our first textblob
+        textBlb = TextBlob(message.content)
+        textCorrected = textBlb.correct()
+        print(textCorrected)
+
         intent = get_prediction(message.content)
 
         if intent == 'Toxic':
             await message.delete()
             warning_str = "не ругайтесь!"
             await message.channel.send(f'{message.author.mention}, {warning_str}')
+            print(f'Toxic message removed: {message.content}')
         print(f'Intent: {intent}')
 
 
