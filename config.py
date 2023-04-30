@@ -10,7 +10,7 @@ USER_MSG_TIME_DELETE = 60
 
 
 RU_MODEL_FILE = '-'
-EN_MODEL_FILE = 'nn/models/50k.pth'
+EN_MODEL_FILE = 'nn/models/1256.pth'
 RU_JSON_DATASET = '-'
 EN_JSON_DATASET = '-'
 

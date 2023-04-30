@@ -1,3 +1,6 @@
+import datetime
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -8,13 +11,15 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
-from transformers import AdamW, DistilBertModel, DistilBertTokenizer
+from transformers import (AdamW, AutoModel, BertTokenizerFast, DistilBertModel,
+                          DistilBertTokenizer, RobertaModel, RobertaTokenizer)
 
 # Указываем GPU
 device = torch.device('cuda')
 
 # Подготовка данных для обучения
-df = pd.read_csv("datasets/train_preprocessed.csv")
+dataset_name = input('Dataset name: ')
+df = pd.read_csv(f"datasets/{dataset_name}.csv")
 df = df[['comment_text', 'toxic']]
 
 # переименование столбцов
@@ -32,10 +37,22 @@ df['label'] = le.fit_transform(df['label'])
 # Присваиваем столбцам переменные для удобства
 train_text, train_labels = df['text'], df['label']
 
-# Загружаем токенизатор DistilBert
-tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-# Импортируем предварительно обученную модель DistilBert
-bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
+user_input = input(
+    'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model]: ')
+if user_input == '1':
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+    bert = RobertaModel.from_pretrained('roberta-base')
+elif user_input == '2':
+    # Загружаем токенизатор DistilBert
+    tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    # Импортируем предварительно обученную модель DistilBert
+    bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
+else:
+    # Загружаем токенизатор BERT
+    tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+    # Импортируем предварительно обученную модель на основе BERT
+    bert = AutoModel.from_pretrained('bert-base-uncased')
+
 
 # Получаем длину всех сообщений в наборе тестовых данных
 seq_len = [len(i.split()) for i in train_text]
@@ -68,9 +85,13 @@ train_mask = torch.tensor(tokens_train['attention_mask'])
 train_y = torch.tensor(train_labels.tolist())  # Массив с метками
 # print(train_seq, train_mask, train_y)
 
-
+"""Гиперпараметры"""
 # Размер пачки для обучения
-batch_size = 16
+batch_size = 32
+# Количество тренировочных эпох
+epochs = 200
+# Скорость тренировки
+lr = 0.001
 
 # Преобразуем в тензоры
 train_data = TensorDataset(train_seq, train_mask, train_y)
@@ -94,7 +115,7 @@ model = model.to(device)
 
 
 # Определяем оптимизатор
-optimizer = AdamW(model.parameters(), lr=1e-3)
+optimizer = AdamW(model.parameters(), lr=lr)
 # Вычисляем веса классов
 
 class_wts = compute_class_weight(class_weight="balanced",
@@ -111,9 +132,6 @@ cross_entropy = nn.NLLLoss(weight=weights)
 
 # Пустой список для хранения потерь обучения и проверки каждой эпохи
 train_losses = []
-
-# Количество тренировочных эпох
-epochs = 200
 
 # Мы также можем использовать планировщик скорости обучения
 # для достижения лучших результатов
@@ -183,6 +201,7 @@ def train():
     return avg_loss, total_preds
 
 
+start_time = datetime.datetime.now()
 # Обучение модели
 for epoch in range(epochs):
     print('\n Epoch {:} / {:}'.format(epoch + 1, epochs))
@@ -201,24 +220,43 @@ for epoch in range(epochs):
 
     print(f'\nTraining Loss: {train_loss:.3f}')
 
+end_time = datetime.datetime.now()
 
-# Выводим результаты тренировки
+# Строим график потерь за все время обучения модели
 plt.plot(train_losses)
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 
-
+used_model_name = 'Roberta' if user_input == '1' else 'DistilBert' if user_input == '2' else 'BERT'
 data = {
     "model_state": model.state_dict(),
-    "max_seq_len": max_seq_len
+    "max_seq_len": max_seq_len,
+    'used_model_name': used_model_name
 }
 
 # filename = input('Введите название файла: ')
-filename = '160k'
+filename = f'{dataset_name}-{used_model_name}-e{epochs}-lr{lr}-bs{batch_size}-msl{max_seq_len}'
 
-# Сохраняем график в файл
-plt.savefig(f'models/{filename}.png')
+if not os.path.isdir(f'models/{filename}'):
+    os.mkdir(f'models/{filename}')
 
-FILE = f'models/{filename}.pth'
+# Сохраняем модель
+FILE = f'models/{filename}/model.pth'
 torch.save(data, FILE)
 print(f'File saved to "{FILE}"')
+
+# Сохраняем график в файл
+plt.savefig(f'models/{filename}/losses.png')
+
+# Сохраняем настройки сети
+my_file = open(f"models/{filename}/settings.txt", "w+")
+my_file.write(f'Model name: {filename}\n' +
+              f'Used dataset: {dataset_name}\n' +
+              f'Training time: {end_time - start_time}\n' +
+              f'Used model: {used_model_name}\n' +
+              f'Batch size: {batch_size}\n' +
+              f'Learning rate: {lr}\n' +
+              f'Number of epochs: {epochs}\n' +
+              f'Maximum sequence length: {max_seq_len}\n' +
+              f'Last loss: {train_losses[-1]}')
+my_file.close()
