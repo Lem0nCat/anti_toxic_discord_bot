@@ -69,7 +69,7 @@ model.load_state_dict(data_model['model_state'])
 model.eval()
 
 
-class Speaking(commands.Cog):
+class MessageModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -78,13 +78,15 @@ class Speaking(commands.Cog):
         if message.author.bot or message.content.startswith(PREFIX):
             return
 
+        text_message = message.content
         # Исправление ошибок в сообщении
         # Making our first textblob
         textBlb = TextBlob(message.content)
         textCorrected = textBlb.correct()
+        # text_message = str(textCorrected)
         print(textCorrected)
 
-        intent = get_prediction(message.content)
+        intent = get_prediction(text_message)
 
         if intent == 'Toxic':
             await message.delete()
@@ -95,4 +97,4 @@ class Speaking(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Speaking(bot))
+    bot.add_cog(MessageModeration(bot))
