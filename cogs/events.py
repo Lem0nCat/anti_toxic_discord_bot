@@ -23,7 +23,7 @@ class Events(commands.Cog):
                 color=ERROR_COLOR
             ), delete_after=BOT_MSG_TIME_DELETE)
             await ctx.message.delete(delay=USER_MSG_TIME_DELETE)
-            
+
         elif isinstance(error, commands.UserInputError):
             await ctx.reply(embed=disnake.Embed(
                 description=f'**❌ {ctx.author.name}, the command was entered incorrectly!**\n'
@@ -45,16 +45,38 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        role = disnake.utils.get(member.guild.roles, id=1084159379609235618)
+        if not WELCOME_MESSAGE:
+            return
+
         channel = member.guild.system_channel
 
         embed = disnake.Embed(
-            title="**New member!**",
-            description=f'{member.name}#{member.discriminator}',
+            title="**Welcome**",
+            description=f'{member.mention} has joined our community',
             color=INFO_COLOR
         )
+        embed.set_thumbnail(url=member.avatar.url)
 
-        await member.add_roles(role)
+        if NEW_USER_ROLE_ID:
+            role = disnake.utils.get(member.guild.roles, id=NEW_USER_ROLE_ID)
+            await member.add_roles(role)
+
+        await channel.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        if not GOODBYE_MESSAGE:
+            return
+
+        channel = member.guild.system_channel
+
+        embed = disnake.Embed(
+            title="**Goodbye**",
+            description=f'{member.mention} has left our community...',
+            color=INFO_COLOR
+        )
+        embed.set_thumbnail(url=member.avatar.url)
+
         await channel.send(embed=embed)
 
 
