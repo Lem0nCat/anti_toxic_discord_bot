@@ -6,7 +6,7 @@ import torch
 from disnake.ext import commands
 from textblob import TextBlob
 from transformers import (AutoModel, BertTokenizerFast, DistilBertModel,
-                          DistilBertTokenizer)
+                          DistilBertTokenizer, RobertaModel, RobertaTokenizer)
 
 from config import *
 from nn.model import BERT_Arch
@@ -22,19 +22,30 @@ data = {"intents": [
 # Указываем устройство для вычислений
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-# Загружаем токенизатор DistilBert
-tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-# Импортируем предварительно обученную модель DistilBert
-bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
-
-# # Загружаем токенизатор BERT
-# tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
-# # Импортируем предварительно обученную модель на основе BERT
-# bert = AutoModel.from_pretrained('bert-base-uncased')
-
 # Загружаем модель из файла
 data_model = torch.load(EN_MODEL_FILE)
+
+
+if 'used_model_name' in data_model:
+    user_input = data_model['used_model_name']
+else:
+    user_input = input(
+        'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model]: ')
+if user_input == 'Roberta' or user_input == '1':
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+    bert = RobertaModel.from_pretrained('roberta-base')
+elif user_input == 'DistilBert' or user_input == '2':
+    # Загружаем токенизатор DistilBert
+    tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    # Импортируем предварительно обученную модель DistilBert
+    bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
+else:
+    # Загружаем токенизатор BERT
+    tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+    # Импортируем предварительно обученную модель на основе BERT
+    bert = AutoModel.from_pretrained('bert-base-uncased')
+
+
 
 
 def get_prediction(str):
