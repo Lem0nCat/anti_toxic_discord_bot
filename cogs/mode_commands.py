@@ -4,11 +4,13 @@ import disnake
 from disnake.ext import commands
 
 from config import *
+from utils.databases import UsersDataBase
 
 
 class ModeCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.db = UsersDataBase()
 
     """Команды для модераторов и админов"""
     @commands.slash_command(description='Kicks the user out of the server', usage='kick <@user> <reason=None>')
@@ -25,11 +27,15 @@ class ModeCommands(commands.Cog):
     @commands.has_permissions(ban_members=True, administrator=True)
     async def ban(self, interaction, user: disnake.User, *, reason=None):
         await interaction.guild.ban(user, reason=reason)
+        await self.db.delete_user(interaction.guild.id, user)
 
         message = f'User {user.mention} was banned'
         if reason:
             message += f'\nReason: {reason}'
-        await interaction.response.send_message(message, ephemeral=HIDDEN_ANSWERS)
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=HIDDEN_ANSWERS)
+        else:
+            await interaction.response.send_message(message, ephemeral=HIDDEN_ANSWERS)
 
     @commands.slash_command(description='Unban the user on the server', usage='unban <@user> <reason=None>')
     @commands.has_permissions(ban_members=True, administrator=True)

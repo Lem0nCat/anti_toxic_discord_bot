@@ -59,7 +59,8 @@ class Events(commands.Cog):
 
         if NEW_USER_ROLE_ID:
             role = disnake.utils.get(member.guild.roles, id=NEW_USER_ROLE_ID)
-            await member.add_roles(role)
+            if role:
+                await member.add_roles(role)
 
         await channel.send(embed=embed)
 
