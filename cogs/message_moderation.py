@@ -2,9 +2,8 @@ import re
 
 import numpy as np
 import torch
+import transformers
 from disnake.ext import commands
-from transformers import (AutoModel, BertTokenizerFast, DistilBertModel,
-                          DistilBertTokenizer, RobertaModel, RobertaTokenizer)
 
 from config import *
 from nn.model import BERT_Arch
@@ -21,34 +20,37 @@ data = {"intents": [
 # Указываем устройство для вычислений
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Загружаем модель из файла
-data_model = torch.load(EN_MODEL_FILE)
+
+def get_bert_model(data_model):
+    if 'used_model_name' in data_model:
+        user_input = data_model['used_model_name']
+    else:
+        user_input = input(
+            'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model] [3 - RU Model]: ')
+    if user_input == 'Roberta' or user_input == '1':
+        tokenizer = transformers.RobertaTokenizer.from_pretrained(
+            'roberta-base')
+        bert = transformers.RobertaModel.from_pretrained('roberta-base')
+    elif user_input == 'DistilBert' or user_input == '2':
+        tokenizer = transformers.DistilBertTokenizer.from_pretrained(
+            "distilbert-base-uncased")
+        bert = transformers.DistilBertModel.from_pretrained(
+            "distilbert-base-uncased")
+    elif user_input == 'RU' or user_input == '3':
+        tokenizer = transformers.BertTokenizer.from_pretrained(
+            "sberbank-ai/ruBert-base")
+        bert = transformers.AutoModel.from_pretrained(
+            "sberbank-ai/ruBert-base")
+    else:
+        tokenizer = transformers.BertTokenizerFast.from_pretrained(
+            'bert-base-uncased')
+        bert = transformers.AutoModel.from_pretrained('bert-base-uncased')
+
+    return tokenizer, bert
 
 
-if 'used_model_name' in data_model:
-    user_input = data_model['used_model_name']
-else:
-    user_input = input(
-        'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model]: ')
-if user_input == 'Roberta' or user_input == '1':
-    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
-    bert = RobertaModel.from_pretrained('roberta-base')
-elif user_input == 'DistilBert' or user_input == '2':
-    # Загружаем токенизатор DistilBert
-    tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-    # Импортируем предварительно обученную модель DistilBert
-    bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
-else:
-    # Загружаем токенизатор BERT
-    tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
-    # Импортируем предварительно обученную модель на основе BERT
-    bert = AutoModel.from_pretrained('bert-base-uncased')
-
-
-
-
-def get_prediction(str):
-    str = re.sub(r'[^a-zA-Z ]+', '', str)
+async def get_prediction(str, model, tokenizer, data_model):
+    str = re.sub(r'[^a-zA-Zа-яА-Я ]+', '', str)
     test_text = [str]
     model.eval()
 
@@ -73,10 +75,18 @@ def get_prediction(str):
     predicted_class = id2label[preds[0]]
     return predicted_class
 
+# Загружаем модель из файла
+ru_data_model = torch.load(RU_MODEL_FILE)
+ru_tokenizer, ru_bert = get_bert_model(ru_data_model)
+ru_model = BERT_Arch(ru_bert).to(device)
+ru_model.load_state_dict(ru_data_model['model_state'])
+ru_model.eval()
 
-model = BERT_Arch(bert).to(device)
-model.load_state_dict(data_model['model_state'])
-model.eval()
+en_data_model = torch.load(EN_MODEL_FILE)
+en_tokenizer, en_bert = get_bert_model(en_data_model)
+en_model = BERT_Arch(en_bert).to(device)
+en_model.load_state_dict(en_data_model['model_state'])
+en_model.eval()
 
 
 class MessageModeration(commands.Cog):
@@ -89,13 +99,12 @@ class MessageModeration(commands.Cog):
         if message.author.bot or message.content.startswith(PREFIX):
             return
 
-        intent = get_prediction(message.content)
+        intent = await get_prediction(message.content, en_model, en_tokenizer, en_data_model)
+        if intent == 'Not Toxic':
+            intent = await get_prediction(message.content, ru_model, ru_tokenizer, ru_data_model)
         if intent == 'Toxic':
             await message.delete()
-            # warning_str = "не ругайтесь!"
-            # await message.channel.send(f'{message.author.mention}, {warning_str}')
             print(f'Toxic message removed: {message.content}')
-
             ctx = await self.bot.get_context(message)
             await ctx.invoke(self.bot.get_slash_command('warn'), user=message.author, reason='The manifestation of toxicity in the chat')
 

@@ -11,8 +11,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
-from transformers import (AdamW, AutoModel, BertTokenizerFast, DistilBertModel,
-                          DistilBertTokenizer, RobertaModel, RobertaTokenizer)
+from transformers import (AdamW, AutoModel, BertTokenizer, BertTokenizerFast,
+                          DistilBertModel, DistilBertTokenizer, RobertaModel,
+                          RobertaTokenizer)
 
 # Указываем GPU
 device = torch.device('cuda')
@@ -38,7 +39,7 @@ df['label'] = le.fit_transform(df['label'])
 train_text, train_labels = df['text'], df['label']
 
 user_input = input(
-    'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model]: ')
+    'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model] [3 - RU Model]: ')
 if user_input == '1':
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
     bert = RobertaModel.from_pretrained('roberta-base')
@@ -47,6 +48,9 @@ elif user_input == '2':
     tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
     # Импортируем предварительно обученную модель DistilBert
     bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
+elif user_input == '3':
+    tokenizer = BertTokenizer.from_pretrained("sberbank-ai/ruBert-base")
+    bert = AutoModel.from_pretrained("sberbank-ai/ruBert-base")
 else:
     # Загружаем токенизатор BERT
     tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
@@ -227,7 +231,7 @@ plt.plot(train_losses)
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 
-used_model_name = 'Roberta' if user_input == '1' else 'DistilBert' if user_input == '2' else 'BERT'
+used_model_name = 'Roberta' if user_input == '1' else 'DistilBert' if user_input == '2' else 'RU' if user_input == '3' else 'BERT'
 data = {
     "model_state": model.state_dict(),
     "max_seq_len": max_seq_len,

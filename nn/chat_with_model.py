@@ -3,8 +3,8 @@ import re
 
 import numpy as np
 import torch
+import transformers
 from model import BERT_Arch
-from transformers import DistilBertModel, DistilBertTokenizer
 
 id2label = {0: 'Not Toxic', 1: 'Toxic'}
 data = {"intents": [
@@ -13,23 +13,42 @@ data = {"intents": [
     {"tag": "Not Toxic",
      "responses": [":)"]}
 ]}
-filename = 'test2_483.pth'
+filename = 'ru1000-RU-e200-lr0.001-bs32-msl140/model.pth'
 
 # Указываем устройство для вычислений
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Загружаем токенизатор DistilBert
-tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-
-# Импортируем предварительно обученную модель DistilBert
-bert = DistilBertModel.from_pretrained("distilbert-base-uncased")
+user_input = input(
+    'Choose a model [0 - BERT Model] [1 - Roberta Model] [2 - DistilBert Model]: ')
+if user_input == 'Roberta' or user_input == '1':
+    tokenizer = transformers.RobertaTokenizer.from_pretrained('roberta-base')
+    bert = transformers.RobertaModel.from_pretrained('roberta-base')
+elif user_input == 'DistilBert' or user_input == '2':
+    # Загружаем токенизатор DistilBert
+    tokenizer = transformers.DistilBertTokenizer.from_pretrained(
+        "distilbert-base-uncased")
+    # Импортируем предварительно обученную модель DistilBert
+    bert = transformers.DistilBertModel.from_pretrained(
+        "distilbert-base-uncased")
+elif user_input == 'RU' or user_input == '3':
+    tokenizer = transformers.BertTokenizer.from_pretrained(
+        "sberbank-ai/ruBert-base")
+    bert = transformers.AutoModel.from_pretrained("sberbank-ai/ruBert-base")
+else:
+    # Загружаем токенизатор BERT
+    tokenizer = transformers.BertTokenizerFast.from_pretrained(
+        'bert-base-uncased')
+    # Импортируем предварительно обученную модель на основе BERT
+    bert = transformers.AutoModel.from_pretrained('bert-base-uncased')
 
 
 # Загружаем модель из файла
 data_model = torch.load(f'models/{filename}')
 
+
 def get_prediction(str):
-    str = re.sub(r'[^a-zA-Z ]+', '', str)
+    str = re.sub(r'[^a-zA-Zа-яА-Я ]+', '', str)
+    print(str)
     test_text = [str]
     model.eval()
 
