@@ -20,9 +20,9 @@ class Warnings(commands.Cog):
         embed = disnake.Embed(color=INFO_COLOR,
                               title=f'Number of user warnings - {member}')
         embed.add_field(name='Current quantity', value=f'```{user[1]}```')
-        embed.add_field(name='Maximum warnings', value=f'```{MAX_WARNINGS}```')
+        embed.add_field(name='Maximum warnings', value=f'```{BAN_WARNING_COUNT}```')
         embed.set_thumbnail(url=member.display_avatar.url)
-        await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+        await interaction.response.send_message(embed=embed)
 
     @commands.slash_command(description='Issue a warning to the user')
     @commands.has_permissions(ban_members=True, administrator=True)
@@ -31,17 +31,28 @@ class Warnings(commands.Cog):
         await self.db.add_user(interaction.guild.id, user)
         await self.db.issue_warnings(interaction.guild.id, user, 1)
 
+        if type(interaction) == commands.context.Context:
+            interaction.author = self.bot.user
+
         embed = disnake.Embed(color=WARNING_COLOR,
                               title=f'⚠️Issuing a warning to the user - {user}')
         embed.description = f'{interaction.author.mention} issued a warning to {user.mention}'
         if reason:
             embed.add_field(name='Reason', value=f'{reason}')
         # embed.set_thumbnail(url=member.display_avatar.url)
-        await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+
+        if type(interaction) == commands.context.Context:
+            await interaction.send(embed=embed)
+        else:
+            await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
 
         user_bd = await self.db.get_user(interaction.guild.id, user)
-        if user_bd[1] >= MAX_WARNINGS:
-            await self.bot.get_slash_command("ban").callback(self, interaction=interaction, user=user)
+        if user_bd[1] >= BAN_WARNING_COUNT:
+            await self.bot.get_slash_command('ban').callback(self, interaction=interaction, user=user)
+        elif user_bd[1] == MUTE_WARNING_COUNT:
+            member = await interaction.guild.fetch_member(user.id)
+            if member:
+                await self.bot.get_slash_command('mute').callback(self, interaction=interaction, member=user, minutes=DEFAULT_MUTE_DURATION, reason='Numerous violations of the rules')
 
     @commands.slash_command(description='Removes one warning from the user')
     @commands.has_permissions(ban_members=True, administrator=True)
@@ -58,6 +69,27 @@ class Warnings(commands.Cog):
             embed.description = f'This user has no warnings!'
 
         await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+    
+    # @commands.command(description='Issue a warning to the user', usage='warn <@user> <reason=None>')
+    # @commands.has_permissions(ban_members=True, administrator=True)
+    # async def warn(self, ctx, user: disnake.User, reason: str = None):
+    #     await self.db.create_table(ctx.guild.id)
+    #     await self.db.add_user(ctx.guild.id, user)
+    #     await self.db.issue_warnings(ctx.guild.id, user, 1)
+
+    #     embed = disnake.Embed(color=WARNING_COLOR,
+    #                           title=f'⚠️Issuing a warning to the user - {user}')
+    #     embed.description = f'{ctx.author.mention} issued a warning to {user.mention}'
+    #     if reason:
+    #         embed.add_field(name='Reason', value=f'{reason}')
+    #     # embed.set_thumbnail(url=member.display_avatar.url)
+    #     await ctx.send(embed=embed)
+
+    #     user_bd = await self.db.get_user(ctx.guild.id, user)
+    #     if user_bd[1] >= BAN_WARNING_COUNT:
+    #         await ctx.invoke(self.bot.get_slash_command('ban'), user=user, reason='Numerous violations of the rules')
+    #     elif user_bd[1] == MUTE_WARNING_COUNT:
+    #         await ctx.invoke(self.bot.get_slash_command('mute'), user=user, minutes=DEFAULT_MUTE_DURATION, reason='Numerous violations of the rules')
 
 
 def setup(bot):

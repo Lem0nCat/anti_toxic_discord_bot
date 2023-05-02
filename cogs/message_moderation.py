@@ -1,15 +1,14 @@
-import random
 import re
 
 import numpy as np
 import torch
 from disnake.ext import commands
-from textblob import TextBlob
 from transformers import (AutoModel, BertTokenizerFast, DistilBertModel,
                           DistilBertTokenizer, RobertaModel, RobertaTokenizer)
 
 from config import *
 from nn.model import BERT_Arch
+from utils.databases import UsersDataBase
 
 id2label = {0: 'Not Toxic', 1: 'Toxic'}
 data = {"intents": [
@@ -83,28 +82,23 @@ model.eval()
 class MessageModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.db = UsersDataBase()
 
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot or message.content.startswith(PREFIX):
             return
 
-        text_message = message.content
-        # Исправление ошибок в сообщении
-        # Making our first textblob
-        textBlb = TextBlob(message.content)
-        textCorrected = textBlb.correct()
-        # text_message = str(textCorrected)
-        print(textCorrected)
-
-        intent = get_prediction(text_message)
-
+        intent = get_prediction(message.content)
         if intent == 'Toxic':
             await message.delete()
             warning_str = "не ругайтесь!"
             await message.channel.send(f'{message.author.mention}, {warning_str}')
             print(f'Toxic message removed: {message.content}')
-        print(f'Intent: {intent}')
+
+
+            ctx = await self.bot.get_context(message)
+            await ctx.invoke(self.bot.get_slash_command('warn'), user=message.author, reason='The manifestation of toxicity in the chat')
 
 
 def setup(bot):
