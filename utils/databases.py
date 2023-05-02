@@ -1,3 +1,5 @@
+import os
+
 import aiosqlite
 import disnake
 
@@ -7,6 +9,8 @@ from config import *
 class UsersDataBase:
     def __init__(self):
         self.name = 'dbs/users.db'
+        if not os.path.isdir('dbs'):
+            os.mkdir('dbs')
 
     async def create_table(self, server_id: disnake.Guild.id):
         # Подключение к бд
@@ -25,13 +29,6 @@ class UsersDataBase:
             query = f'SELECT * FROM s{server_id} WHERE id = ?'
             await cursor.execute(query, (user.id, ))
             return await cursor.fetchone()
-
-    # async def get_warnings(self, server_id: disnake.Guild.id, user: disnake.Member):
-    #     bd_user = self.get_user(server_id, user)
-    #     if bd_user:
-    #         return bd_user[1]
-    #     else:
-    #         return None
     
     async def add_user(self, server_id: disnake.Guild.id, user: disnake.Member):
         async with aiosqlite.connect(self.name) as db:

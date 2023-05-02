@@ -92,10 +92,9 @@ class MessageModeration(commands.Cog):
         intent = get_prediction(message.content)
         if intent == 'Toxic':
             await message.delete()
-            warning_str = "не ругайтесь!"
-            await message.channel.send(f'{message.author.mention}, {warning_str}')
+            # warning_str = "не ругайтесь!"
+            # await message.channel.send(f'{message.author.mention}, {warning_str}')
             print(f'Toxic message removed: {message.content}')
-
 
             ctx = await self.bot.get_context(message)
             await ctx.invoke(self.bot.get_slash_command('warn'), user=message.author, reason='The manifestation of toxicity in the chat')

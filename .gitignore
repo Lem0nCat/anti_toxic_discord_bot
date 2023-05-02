@@ -1,4 +1,5 @@
 *.db
+config.py
 
 models/
 datasets/
