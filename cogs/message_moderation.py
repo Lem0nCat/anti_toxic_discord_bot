@@ -76,13 +76,13 @@ async def get_prediction(str, model, tokenizer, data_model):
     return predicted_class
 
 # Загружаем модель из файла
-ru_data_model = torch.load(RU_MODEL_FILE)
+ru_data_model = torch.load(RU_MODEL_FILE, map_location=device)   
 ru_tokenizer, ru_bert = get_bert_model(ru_data_model)
 ru_model = BERT_Arch(ru_bert).to(device)
 ru_model.load_state_dict(ru_data_model['model_state'])
 ru_model.eval()
 
-en_data_model = torch.load(EN_MODEL_FILE)
+en_data_model = torch.load(EN_MODEL_FILE, map_location=device)
 en_tokenizer, en_bert = get_bert_model(en_data_model)
 en_model = BERT_Arch(en_bert).to(device)
 en_model.load_state_dict(en_data_model['model_state'])
