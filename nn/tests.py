@@ -5,6 +5,8 @@ import pandas as pd
 import torch
 import transformers
 from model import BERT_Arch
+import matplotlib.pyplot as plt
+
 
 id2label = {0: 'Not Toxic', 1: 'Toxic'}
 
@@ -74,10 +76,10 @@ df = df[['comment_text', 'toxic']]
 num_rows, num_cols = df.shape
 
 files = [
-    'ru1000-Mult-e200-lr0.001-bs32-msl70',
-    'ru1000-RU-e200-lr0.001-bs32-msl140',
-    'ru1250-RU-e200-lr0.001-bs32-msl70',
-    'ru1250-RU-e200-lr0.001-bs32-msl140'
+    '1256-DistilBert-e200-lr0.001-bs32-msl160',
+    '1256-BERT-e200-lr0.001-bs32-msl160',
+    '1256-DistilBert-e200-lr0.001-bs32-msl80',
+    '2500-DistilBert-e200-lr0.001-bs32-msl180',
 ]
 corrects = []
 for file in files:
@@ -90,18 +92,31 @@ for file in files:
         model.eval()
 
         count = 0
+        accuracy_list = []
         for index, row in df.iterrows():
             intent = get_prediction(row['comment_text'])
+            accuracy = (count * 100) / (index + 1)
+            if index % 100 == 0 and count != 0: 
+                accuracy_list.append(accuracy)
             if intent == id2label[row['toxic']]:
                 count += 1
             if index % 500 == 0:
                 print(
-                    f'Model correct: {(count * 100) / (index + 1):.1f}% {index}/{num_rows}')
+                    f'Model correct: {accuracy:.1f}% {index}/{num_rows}')
         print(f'Final correct: {(count * 100) / num_rows:.1f}%')
+        plt.plot(accuracy_list)
+        plt.title(f'{file}')
+        # Установка фиксированной оси y
+        plt.ylim([0, 100])
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.show()
+
         corrects.append((count * 100) / num_rows)
     except:
         corrects.append('error')
 
-
+print()
+print('Test results:')
 for index, file in enumerate(files):
-    print(f'File {corrects[index]}% - "{file}"')
+    print(f'File: "{file}" | Model accuracy: {round(corrects[index], 1) if type(corrects[index]) != str else corrects[index]}%')

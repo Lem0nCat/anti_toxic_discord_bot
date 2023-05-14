@@ -103,7 +103,7 @@ class ModeCommands(commands.Cog):
                               description=f'🔄️Deleting {msg_count} messages...')
         await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
 
-        await interaction.channel.purge(limit=msg_count + 1)
+        await interaction.channel.purge(limit=msg_count)
         
         if HIDDEN_ANSWERS:
             embed = disnake.Embed(color=SUCCESS_COLOR,
