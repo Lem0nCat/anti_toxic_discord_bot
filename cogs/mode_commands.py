@@ -101,15 +101,14 @@ class ModeCommands(commands.Cog):
         embed = disnake.Embed(color=INFO_COLOR,
                               title='🧹Clearing the chat',
                               description=f'🔄️Deleting {msg_count} messages...')
-        await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await interaction.channel.purge(limit=msg_count)
         
-        if HIDDEN_ANSWERS:
-            embed = disnake.Embed(color=SUCCESS_COLOR,
-                                  title='🧹Clearing the chat',
-                              description=f'✅Deleted {msg_count} messages!')
-            await interaction.edit_original_message(embed=embed)
+        embed = disnake.Embed(color=SUCCESS_COLOR,
+                              title='🧹Clearing the chat',
+                          description=f'✅Deleted {msg_count} messages!')
+        await interaction.edit_original_message(embed=embed)
 
 
 def setup(bot):
