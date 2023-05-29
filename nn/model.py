@@ -12,7 +12,7 @@ class BERT_Arch(nn.Module):
         # Активационная функция ReLU
         self.relu = nn.ReLU()
 
-        # Dense layer
+        # Полносвязные слои
         self.fc1 = nn.Linear(768, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 2)
