@@ -4,13 +4,15 @@ import disnake
 from disnake.ext import commands
 
 from config import *
-from utils.databases import UsersDataBase
+from utils.users_db import UsersDataBase
+from utils.settings_db import SettingsDataBase
 
 
 class ModeCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = UsersDataBase()
+        self.users_db = UsersDataBase()
+        self.settings_db = SettingsDataBase()
 
     """Команды для модераторов и админов"""
     @commands.slash_command(description='Kicks the user out of the server', usage='kick <@user> <reason=None>')
@@ -25,7 +27,8 @@ class ModeCommands(commands.Cog):
             if reason:
                 embed.add_field(name='Reason', value=f'{reason}')
 
-            await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+            await interaction.response.send_message(embed=embed, 
+                                                    ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
         except:
             print("Failed to kick the user!")
 
@@ -34,7 +37,7 @@ class ModeCommands(commands.Cog):
     async def ban(self, interaction, user: disnake.User, *, reason=None):
         try:
             await interaction.guild.ban(user, reason=reason)
-            await self.db.delete_user(interaction.guild.id, user)
+            await self.users_db.delete_all_warnings(interaction.guild.id, user)
 
             message = f'User {user.mention} was banned'
             if reason:
@@ -50,9 +53,11 @@ class ModeCommands(commands.Cog):
             if type(interaction) == commands.context.Context:
                 await interaction.send(embed=embed)
             elif interaction.response.is_done():
-                await interaction.followup.send(embed=embed, ephemeral=HIDDEN_ANSWERS)
+                await interaction.followup.send(embed=embed, 
+                                                ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
             else:
-                await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+                await interaction.response.send_message(embed=embed, 
+                                                        ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
         except:
             print("Failed to ban the user!")
 
@@ -66,7 +71,8 @@ class ModeCommands(commands.Cog):
                                 title=f'✅Unban of the user - {user}')
             embed.description = f'{interaction.author.mention} unbanned {user.mention}'
 
-            await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+            await interaction.response.send_message(embed=embed, 
+                                                    ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
         except:
             print("Failed to unban the user!")
 
@@ -89,9 +95,11 @@ class ModeCommands(commands.Cog):
             if type(interaction) == commands.context.Context:
                 await interaction.send(embed=embed)
             elif interaction.response.is_done():
-                await interaction.followup.send(embed=embed, ephemeral=HIDDEN_ANSWERS)
+                await interaction.followup.send(embed=embed, 
+                                                ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
             else:
-                await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+                await interaction.response.send_message(embed=embed, 
+                                                        ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
         except:
             print("Failed to mute the user!")
 
@@ -105,7 +113,8 @@ class ModeCommands(commands.Cog):
                                 title=f'✅Unmute of the user - {member}')
             embed.description = f'{interaction.author.mention} unmuted {member.mention}'
 
-            await interaction.response.send_message(embed=embed, ephemeral=HIDDEN_ANSWERS)
+            await interaction.response.send_message(embed=embed, 
+                                                    ephemeral=await self.settings_db.get_one_setting(interaction.guild.id, "hidden_answers"))
         except:
             print("Failed to unmute the user!")
 

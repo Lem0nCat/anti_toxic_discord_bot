@@ -7,7 +7,7 @@ from disnake.ext import commands
 
 from config import *
 from nn.model import BERT_Arch
-from utils.databases import UsersDataBase
+
 
 id2label = {0: 'Not Toxic', 1: 'Toxic'}
 data = {"intents": [
@@ -92,7 +92,6 @@ en_model.eval()
 class MessageModeration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = UsersDataBase()
 
     @commands.Cog.listener()
     async def on_message(self, message):

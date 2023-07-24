@@ -5,7 +5,7 @@ from disnake.ext import commands
 from config import BOT_TOKEN, PREFIX
 
 
-bot = commands.Bot(command_prefix=PREFIX, help_command=None, intents=disnake.Intents.all(), test_guilds=[927622577218793502])
+bot = commands.Bot(command_prefix=PREFIX, help_command=None, intents=disnake.Intents.all())
 
 
 @bot.command(brief='Load a certain cog', usage='load <cog_name>')
