@@ -1,4 +1,4 @@
-BOT_TOKEN = 'token'
+BOT_TOKEN = 'your_bot_token'
 PREFIX = '!'
 
 SUCCESS_COLOR = 0x2ecc71
@@ -6,20 +6,7 @@ ERROR_COLOR = 0xe74c3c
 WARNING_COLOR = 0xFF8C00
 INFO_COLOR = 0x00BFFF
 
-BOT_MSG_TIME_DELETE = 60
-USER_MSG_TIME_DELETE = 60
-
-HIDDEN_ANSWERS = False
-
-NEW_USER_ROLE_ID = 0
-WELCOME_MESSAGE = True
-GOODBYE_MESSAGE = True
-
-ru_model_name = '-'
-en_model_name = '-'
+ru_model_name = 'ru1250-RU-e200-lr0.001-bs32-msl140'
+en_model_name = '1256-DistilBert-e200-lr0.001-bs32-msl160'
 RU_MODEL_FILE = f'nn/models/{ru_model_name}/model.pth'
 EN_MODEL_FILE = f'nn/models/{en_model_name}/model.pth'
-
-BAN_WARNING_COUNT = 3
-MUTE_WARNING_COUNT = 2
-DEFAULT_MUTE_DURATION = 15
